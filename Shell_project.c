@@ -13,6 +13,8 @@ To compile and run the program:
 	(then type ^D to exit program)
 
 **/
+#include <string.h>
+
 
 #include "job_control.h"   // remember to compile with module job_control.c 
 
@@ -32,14 +34,29 @@ int main(void)
 	int status;             	/* status returned by wait */
 	char *file_in, *file_out; 	/* file names for redirection */
 
+
+	ignore_terminal_signals();
+
 	while (1)   /* Program terminates normally inside get_command() after ^D is typed*/
 	{   		
+		
+
 		printf("COMMAND->");
 		fflush(stdout);
 		get_command(inputBuffer, MAX_LINE, args, &background);  /* get next command */
 		
 		if(args[0]==NULL) continue;   // if empty command
 
+		// internal commands
+		if(!strcmp(args[0], "cd")){
+			if(args[1]==NULL){
+				//chdir("~");
+				continue;
+			}
+
+			chdir(args[1]);
+			continue; //replace by return when refactoring to a function
+		}
 		
 		//	 (1) fork a child process using fork()
 		pid_fork = fork();
@@ -51,6 +68,10 @@ int main(void)
 		
 		//	 (2) the child process will invoke execvp()
 		if (pid_fork == 0) { // child process
+			setpgid(0,getpid());
+
+			
+
 			execvp(args[0],args);
 			printf("woops, the shell couldn't create the process (exec failed)\n");
 			exit(1);
