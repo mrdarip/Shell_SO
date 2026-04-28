@@ -40,13 +40,31 @@ int main(void)
 		
 		if(args[0]==NULL) continue;   // if empty command
 
-		/* the steps are:
-			 (1) fork a child process using fork()
-			 (2) the child process will invoke execvp()
-			 (3) if background == 0, the parent will wait, otherwise continue 
-			 (4) Shell shows a status message for processed command 
-			 (5) loop returns to get_commnad() function
-		*/
+		
+		//	 (1) fork a child process using fork()
+		pid_fork = fork();
+
+		if(pid_fork < 0){
+			printf("woops, the shell couldn't create the process (fork failed)\n");
+		}
+
+		
+		//	 (2) the child process will invoke execvp()
+		if (pid_fork == 0) { // child process
+			execvp(args[0],args);
+			printf("woops, the shell couldn't create the process (exec failed)\n");
+			exit(1);
+		}
+
+
+		//	 (3) if background == 0, the parent will wait, otherwise continue 
+		if(!background){
+			waitpid(pid_fork,&status, 0);
+		}
+		
+		//	 (4) Shell shows a status message for processed command 
+		//	 (5) loop returns to get_commnad() function
+		
 
 	} // end while
 }
