@@ -35,6 +35,11 @@ int main(void)
 	char *file_in, *file_out; 	/* file names for redirection */
 
 
+
+	const char *homeDir = getenv("HOME");
+
+
+
 	ignore_terminal_signals();
 
 	while (1)   /* Program terminates normally inside get_command() after ^D is typed*/
@@ -49,8 +54,8 @@ int main(void)
 
 		// internal commands
 		if(!strcmp(args[0], "cd")){
-			if(args[1]==NULL){
-				//chdir("~");
+			if(args[1]==NULL || args[1]=="~"){
+				chdir(homeDir);
 				continue;
 			}
 
