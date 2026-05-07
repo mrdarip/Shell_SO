@@ -54,7 +54,7 @@ int main(void)
 
 		// internal commands
 		if(!strcmp(args[0], "cd")){
-			if(args[1]==NULL || args[1]=="~"){
+			if(args[1] == NULL || !strcmp(args[1], "~")){
 				chdir(homeDir);
 				continue;
 			}
