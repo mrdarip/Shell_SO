@@ -68,6 +68,7 @@ int main(void)
 
 		if(pid_fork < 0){
 			printf("woops, the shell couldn't create the process (fork failed)\n");
+			continue;
 		}
 
 		
@@ -75,7 +76,11 @@ int main(void)
 		if (pid_fork == 0) { // child process
 			setpgid(0,getpid());
 
-			
+			if(!background){
+				tcsetpgrp(STDIN_FILENO, getpgrp());
+			}
+
+			restore_terminal_signals();
 
 			execvp(args[0],args);
 			printf("woops, the shell couldn't create the process (exec failed)\n");
@@ -85,7 +90,8 @@ int main(void)
 
 		//	 (3) if background == 0, the parent will wait, otherwise continue 
 		if(!background){
-			waitpid(pid_fork,&status, 0);
+			waitpid(pid_fork,&status, WUNTRACED);
+			tcsetpgrp(STDIN_FILENO, getpgrp());
 		}
 		
 		//	 (4) Shell shows a status message for processed command 
