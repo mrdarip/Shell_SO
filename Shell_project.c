@@ -87,6 +87,11 @@ int main(void)
 			chdir(args[1]);
 			continue; //replace by return when refactoring to a function
 		}
+
+		if(!strcmp(args[0], "jobs")){
+			print_job_list(jobs);
+			continue; //replace by return when refactoring to a function
+		}
 		
 		//	 (1) fork a child process using fork()
 		pid_fork = fork();
