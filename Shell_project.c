@@ -20,16 +20,16 @@ To compile and run the program:
 
 #define MAX_LINE 256 /* 256 chars per line, per command, should be enough. */
 
-
 job *jobs; // Points to the memory where the list items are stored
 
 // -----------------------------------------------------------------------
 //                            MAIN          
 // -----------------------------------------------------------------------
 
-void handle_sigchld(int sig) {
-	printf("num de jobs: %d", list_size(jobs));
 
+int str2int(char *s);
+
+void handle_sigchld(int sig) {
 	//print_job_list(jobs);
 	for(int jobi = list_size(jobs); jobi >= 0; jobi--) {
 		job* thisJob = get_item_bypos(jobs, jobi);
@@ -37,13 +37,15 @@ void handle_sigchld(int sig) {
 
 		int status;
 
-		int pid_wait = waitpid(thisJob->pgid, &status, WNOHANG | WUNTRACED);
+		int pid_wait = waitpid(thisJob->pgid, &status, WNOHANG | WUNTRACED | WCONTINUED);
 		if(pid_wait == 0) continue; // No state change for this job
 
 		if(WIFEXITED(status) || WIFSIGNALED(status)) {
 			delete_job(jobs, thisJob);
 		} else if(WIFSTOPPED(status)) {
 			thisJob->state = STOPPED;
+		} else if(WIFCONTINUED(status)) { //si me mandan cont y estoy en la lista (en bg) pongo background como status
+			thisJob->state = BACKGROUND;
 		}
 	}
 }
@@ -92,6 +94,46 @@ int main(void)
 			print_job_list(jobs);
 			continue; //replace by return when refactoring to a function
 		}
+
+		if(!strcmp(args[0], "fg")){
+			if(args[1] == NULL){
+				printf("NOTIMPLEMENTED\n");
+				continue;
+			}
+
+			int position;
+			position = str2int(args[1]);
+			if(position > -1){
+				job* j = get_item_bypos(jobs, position);
+				if(j == NULL){
+					printf("woops that job does not exist!\n");
+					continue;
+				}
+
+				tcsetpgrp(STDIN_FILENO,j->pgid);
+
+				pid_t pid = j->pgid;
+
+				delete_job(jobs, j);
+
+				killpg(pid,SIGCONT);
+
+				//esperamos a q termine o que haga lo que tenga que hacer
+				waitpid(pid,&status, WUNTRACED);
+				tcsetpgrp(STDIN_FILENO, getpgrp());
+
+				if(WIFSTOPPED(status)){
+					add_job(jobs, new_job(pid_fork, args[0], STOPPED));
+				}else{
+					printf("finaliza felizmente :)\n");
+				}
+			}
+			else{
+				printf("invalid position!\n");
+			}
+
+			continue; //replace by return when refactoring to a function
+		}
 		
 		//	 (1) fork a child process using fork()
 		pid_fork = fork();
@@ -135,4 +177,16 @@ int main(void)
 		
 
 	} // end while
+}
+
+int str2int(char *s) {
+    char *end;
+    if (s[0] == '\0')
+        return -1;
+
+    long l = strtol(s, &end, 10);
+
+    if (*end != '\0')
+        return -1;
+    return l;
 }
