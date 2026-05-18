@@ -173,6 +173,12 @@ int main(void)
 		}
 		
 		//	 (4) Shell shows a status message for processed command 
+
+		if(background){
+			printf("Background, pid: %d command: %s, Exited, info: %d", pid_fork, args[0], status);
+		} else {
+			printf("Foreground, pid: %d command: %s, Exited, info: %d", pid_fork, args[0], status);
+		}
 		//	 (5) loop returns to get_commnad() function
 		
 
